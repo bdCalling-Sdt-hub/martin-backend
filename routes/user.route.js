@@ -10,4 +10,8 @@ router.post("/login", configureFileUpload(), userController.userLogin);
 router.post("/forgot-password", configureFileUpload(), userController.forgotPassword);
 router.post("/reset-password", configureFileUpload(), userController.resetPassword);
 
+router.get("/loggeduser",checkUser,configureFileUpload(), userController.loggedUserData);
+
+router.post("/change-password", checkUser, configureFileUpload(), userController.changePassword);
+
 module.exports = router;

@@ -57,11 +57,7 @@ exports.userRegister = catchAsync(async (req, res, next) => {
     const salt = await bcrypt.genSalt(10);
     const hashPassword = await bcrypt.hash(password, salt);
 
-    // let imageFileName = "";
-    // if (req.files && req.files.image && req.files.image[0]) {
-    //     imageFileName = `/media/${req.files.image[0].filename}`;
-    // }
-
+   
     const emailVerifyCode = Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000;
 
     const user = await User.create({
@@ -178,6 +174,23 @@ exports.userLogin = catchAsync(async (req, res) => {
     });
 });
 
+exports.loggedUserData=catchAsync(async (req, res) => {
+
+    const user = await User.findById(req.user._id);
+
+    if(user){
+        return sendResponse(res, {
+            statusCode: httpStatus.OK,
+            success: true,
+            message: "Logged user data retrived successfully",
+            data:user
+        }); 
+    }else{
+        throw new ApiError(401, "You are unauthorized"); 
+    }
+    
+});
+
 
 exports.forgotPassword = catchAsync(async (req, res, next) => {
     const email = req.body.email;
@@ -257,5 +270,40 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
     } else {
         throw new ApiError(400, "Your email is not verified");
     }
+});
+
+
+exports.changePassword = catchAsync(async (req, res) => {
+    const { currentPass, newPass, confirmPass } = req.body;
+    const user = await User.findById(req.user._id);
+
+    if (!currentPass || !newPass || !confirmPass) {
+        throw new ApiError(400, "All Fields are required");
+    }
+
+    const ismatch = await bcrypt.compare(currentPass, user.password);
+    if (!ismatch) {
+        throw new ApiError(400, "Current Password is Wrong");
+    }
+
+    if (currentPass == newPass) {
+        throw new ApiError(400, "New password cannot be the same as old password");
+    }
+
+    if (newPass !== confirmPass) {
+        throw new ApiError(400, "password and confirm password doesnt match");
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashpassword = await bcrypt.hash(newPass, salt);
+    await User.findByIdAndUpdate(req.user._id, {
+        $set: { password: hashpassword },
+    });
+
+    return sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Password Changed Successfully",
+    });
 });
 
