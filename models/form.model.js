@@ -17,9 +17,7 @@ const formSchema = new mongoose.Schema(
 
         optiondata:{
            type:[],
-           required:true
-          
-        },
+         },
       
       },
     { timestamps: true }

@@ -3,6 +3,8 @@ const cors=require("cors");
 const app = express();
 const userRoute = require("./routes/user.route");
 const formRoute = require("./routes/form.route");
+const termprivacyRoute = require("./routes/term&privacy.route");
+
 
 const globalErrorHandler = require("./middlewares/globalErrorHandler");
 const path = require('path');
@@ -16,6 +18,7 @@ app.use(express.urlencoded({ extended: false }));
 
 app.use("/api/auth", userRoute);
 app.use("/api", formRoute);
+app.use("/api", termprivacyRoute);
 
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
