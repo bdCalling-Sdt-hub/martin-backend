@@ -61,3 +61,27 @@ exports.showField=catchAsync(async (req, res, next) => {
 
       
 });
+
+exports.fieldDelete=catchAsync(async (req, res, next) => {
+
+
+    const user = await User.findById(req.user._id);
+    if(user.role=="ADMIN" || "SUPER ADMIN"){
+
+        let Field=await Form.findByIdAndDelete(req.params.id);
+ 
+
+      return sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Field Deleted successfully",
+        data:Field
+    });
+
+
+    }else{
+        throw new ApiError(401, "You are unauthorized");
+    }
+
+      
+});

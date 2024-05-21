@@ -6,5 +6,5 @@ const formController = require("../controllers/form.controller.js");
 
 router.post("/form-field-add",checkUser, formController.formFieldCreate);
 router.get("/form-field-fetch",checkUser, formController.showField);
-
+router.delete("/form-field-delete/:id",checkUser,formController.fieldDelete);
 module.exports = router;
