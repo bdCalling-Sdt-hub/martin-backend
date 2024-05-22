@@ -90,7 +90,7 @@ exports.termAndCondition=catchAsync(async (req, res, next) => {
               data:term
           });
         }else{
-            term.privacy=req.body.privacycontext
+            term.termcontext=req.body.termcontext
             await term.save();
 
             return sendResponse(res, {

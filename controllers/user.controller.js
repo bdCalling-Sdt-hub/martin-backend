@@ -54,6 +54,32 @@ exports.userRegister = catchAsync(async (req, res, next) => {
     if (password !== confirmPass) {
         throw new ApiError(400, "Password and confirm password does not match");
     }
+
+    if(role=="ADMIN"||"SUPER ADMIN"){
+        const salt = await bcrypt.genSalt(10);
+    const hashPassword = await bcrypt.hash(password, salt);
+
+   
+ 
+
+    const user = await User.create({
+        fullName,
+        email,
+        password: hashPassword,
+        termAndCondition: JSON.parse(termAndCondition),
+        emailVerifyCode:null,
+        emailVerified:true,
+        role: role?role:"UNKNOWN",
+        image:"https://img.freepik.com/free-photo/young-bearded-man-with-striped-shirt_273609-5677.jpg?size=626&ext=jpg&ga=GA1.1.1700460183.1708560000&semt=sph"
+         
+    });
+
+    return sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Register successfully!",
+    });
+    }
     const salt = await bcrypt.genSalt(10);
     const hashPassword = await bcrypt.hash(password, salt);
 
@@ -307,3 +333,48 @@ exports.changePassword = catchAsync(async (req, res) => {
     });
 });
 
+
+exports.allAdmin=catchAsync(async (req, res) => {
+
+    const user = await User.findById(req.user._id);
+    console.log(user)
+
+    if(user.role=="ADMIN" || "SUPER ADMIN"){
+        const alluser=await User.find({role:"ADMIN"});
+        return sendResponse(res, {
+            statusCode: httpStatus.OK,
+            success: true,
+            message: "All admin retrived successfully",
+            data:alluser
+        });
+    }
+    else{
+        throw new ApiError(401, "You are unauthorized");
+    }
+})
+
+
+
+exports.deleteAdmin=catchAsync(async (req, res) => {
+
+    const user = await User.findById(req.user._id);
+
+    if(user.role=="ADMIN" || "SUPER ADMIN"){
+        const user=await User.findOne({role:"ADMIN",_id:req.params.id});  
+       
+        if(user){
+           const deleteuser=await User.findByIdAndDelete(req.params.id);
+           return sendResponse(res, {
+            statusCode: httpStatus.OK,
+            success: true,
+            message: "User Deleted successfully",
+            data:deleteuser
+        });
+        }else{
+            throw new ApiError(404, "User not found"); 
+        }
+    }else{
+        throw new ApiError(401, "You are unauthorized");
+    }
+
+});

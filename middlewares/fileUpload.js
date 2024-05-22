@@ -11,7 +11,9 @@ const configureFileUpload = () => {
               
             ) {
                 cb(null, path.join(__dirname, "../public/uploads/images"));
-            } else {
+            } else if (file.mimetype === "application/pdf") {
+                cb(null, path.join(__dirname, "../public/uploads/pdfs"));
+            }else {
                 cb(new Error("Invalid file type"));
             }
         },
@@ -22,7 +24,7 @@ const configureFileUpload = () => {
     });
 
     const fileFilter = (req, file, cb) => {
-        const allowedFieldnames = ["productImage","image","categoryImage"];
+        const allowedFieldnames = ["productImage","image","categoryImage","pdfFile"];
 
         if (file.fieldname === undefined) {
             // Allow requests without any files
@@ -31,7 +33,8 @@ const configureFileUpload = () => {
             if (
                 file.mimetype === "image/jpeg" ||
                 file.mimetype === "image/png" ||
-                file.mimetype === "image/jpg" 
+                file.mimetype === "image/jpg" ||
+                file.mimetype === "application/pdf"
                
             ) {
                 cb(null, true);
@@ -50,6 +53,7 @@ const configureFileUpload = () => {
         { name: "productImage", maxCount: 10 },
         { name: "image", maxCount: 1 },
         { name: "categoryImage", maxCount: 1 },
+        { name: "pdfFile", maxCount: 1 }
         
     ]);
 

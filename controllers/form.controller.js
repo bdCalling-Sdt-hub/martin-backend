@@ -1,5 +1,6 @@
 const Form = require("../models/form.model");
 const User = require("../models/user.model");
+const PdfFile = require("../models/pdf.model.js");
 const sendResponse = require("../shared/sendResponse");
 const ApiError = require("../errors/ApiError.js");
 const httpStatus = require("http-status");
@@ -84,4 +85,59 @@ exports.fieldDelete=catchAsync(async (req, res, next) => {
     }
 
       
+});
+
+
+exports.pdfSave=catchAsync(async (req, res, next) => {
+    const user = await User.findById(req.user._id);
+    if(user.role=="ADMIN" || "SUPER ADMIN"){
+    
+       let pdfUrl ="";
+    
+
+    if (req.files && req.files.pdfFile) {
+    
+            pdfUrl = `public/uploads/pdfs/${ req.files.pdfFile[0].filename}`;
+            //const publicFileUrl = createFileDetails('kyc', file.filename)
+          
+    } 
+    console.log(pdfUrl)
+
+    const Pdffile=await PdfFile.create({
+         pdf:pdfUrl
+    });
+
+    return sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Pdf file Upload successfully",
+        data:Pdffile
+    });
+
+  }else{
+        throw new ApiError(401, "You are unauthorized");
+    }
+});
+
+
+exports.allPdfFetch=catchAsync(async (req, res, next) => {
+
+    const user = await User.findById(req.user._id);
+    if(user.role=="ADMIN" || "SUPER ADMIN"){
+        const Pdffile=await PdfFile.find();
+        if(Pdffile){
+            return sendResponse(res, {
+                statusCode: httpStatus.OK,
+                success: true,
+                message: "Pdf files fetch successfully",
+                data:Pdffile
+            });
+        }else{
+            throw new ApiError(404, "Files not found");   
+        }
+   
+      
+    }else{
+        throw new ApiError(401, "You are unauthorized");
+    }
 });

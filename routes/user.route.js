@@ -14,4 +14,7 @@ router.get("/loggeduser",checkUser,configureFileUpload(), userController.loggedU
 
 router.post("/change-password", checkUser, configureFileUpload(), userController.changePassword);
 
+router.get("/all/admin/account",checkUser,userController.allAdmin);
+
+router.delete("/admin-delete/:id",checkUser,userController.deleteAdmin);
 module.exports = router;
