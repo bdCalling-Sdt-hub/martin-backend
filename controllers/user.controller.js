@@ -219,53 +219,122 @@ exports.loggedUserData=catchAsync(async (req, res) => {
 
 
 exports.forgotPassword = catchAsync(async (req, res, next) => {
-    const email = req.body.email;
-    const user = await User.findOne({ email });
-    if (!user) {
-        throw new ApiError(400, "User doesn't exists");
-    }
 
-    // Store the OTC and its expiration time in the database
-    const emailVerifyCode = Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000;
+    const { email } = req.body
+    if (email) {
+        const user = await User.findOne({ email: email })
 
-    user.emailVerifyCode = emailVerifyCode;
-    user.emailVerified = false;
-    await user.save();
+        if (user) {
+            const emailResetCode = Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000;
+            user.emailVerifyCode = emailResetCode;
+            user.emailVerified=false;
 
-    // Prepare email for password reset
-    const emailData = {
-        email,
-        subject: "Password Reset Email",
-        html: `
-        <h1>Hello, ${user.fullName}</h1>
-        <p>Your Email verified Code is <h3>${emailVerifyCode}</h3> to reset your password</p>
-        <small>This Code is valid for 3 minutes</small>
-      `,
-    };
-
-    // Send email
-    try {
-        await emailWithNodemailer(emailData);
-    } catch (emailError) {
-        console.error("Failed to send verification email", emailError);
-    }
-
-    // Set a timeout to update the oneTimeCode to null after 1 minute
-    setTimeout(async () => {
-        try {
-            user.emailVerifyCode = null;
             await user.save();
-            console.log("emailVerifyCode reset to null after 3 minute");
-        } catch (error) {
-            console.error("Error updating EmailVerifyCode:", error);
-        }
-    }, 180000); // 3 minute in milliseconds
 
-    return sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message: "Send email Verify Code Successfully",
-    });
+            try {
+                const emailData = {
+                    email,
+                    subject: "Password Reset Email",
+                    html: `
+                    <h1>Hello, ${user.fullName}</h1>
+                    <p>Your Email verified Code is <h3>${emailResetCode}</h3> to reset your password</p>
+                    <small>This Code is valid for 1 minutes</small>
+                  `,
+                };
+                await emailWithNodemailer(emailData);
+
+                return sendResponse(res, {
+                    statusCode: httpStatus.OK,
+                    success: true,
+                    message: "Send email Verify Code Successfully",
+                });
+
+               
+            } catch (e) {
+                console.log(e)
+                
+            }
+        }else{
+            throw new ApiError(400, "email doesnt exists");
+            
+        }
+
+    } else {
+        throw new ApiError(400, "Email field are required");
+        //res.status(400).send({ "status": 400, "messege": "Email field are required" })
+    }
+
+    ///////////////////////////////
+    
+    // const user = await User.findOne({ email });
+    // if (!user) {
+    //     throw new ApiError(400, "User doesn't exists");
+    // }
+
+    // // Store the OTC and its expiration time in the database
+    // const emailVerifyCode = Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000;
+
+    // let userdata=await User.findOneAndUpdate(
+    //     { _id: user._id },
+    //     { emailVerifyCode},
+    //     {emailVerified:false},
+    //     { new: true }
+    //   );
+
+    // // user.emailVerifyCode = emailVerifyCode;
+    // // user.emailVerified = false;
+    // // await user.save();
+
+    // // Prepare email for password reset
+    // const emailData = {
+    //     email,
+    //     subject: "Password Reset Email",
+    //     html: `
+    //     <h1>Hello, ${userdata.fullName}</h1>
+    //     <p>Your Email verified Code is <h3>${emailVerifyCode}</h3> to reset your password</p>
+    //     <small>This Code is valid for 1 minutes</small>
+    //   `,
+    // };
+
+    // // Send email
+    // try {
+    //     await emailWithNodemailer(emailData);
+    // } catch (emailError) {
+    //     console.error("Failed to send verification email", emailError);
+    // }
+
+    // setTimeout(async () => {
+    //     await User.updateOne(
+    //       { _id: user._id },
+    //       { $set: { emailVerifyCode: null } }
+    //     );
+    //   }, 3 * 60 * 1000); // 3minute
+    
+
+    // // Set a timeout to update the oneTimeCode to null after 1 minute
+    // // setTimeout(async () => {
+
+    // //     await User.updateOne(
+    // //         { _id: user._id },
+    // //         { $set: { emailVerifyCode: null } }
+    // //       );
+    // //     }, 3 * 60 * 1000);
+
+
+    // //     try {
+    // //         user.emailVerifyCode = null;
+    // //         await user.save();
+    // //         console.log("emailVerifyCode reset to null after 3 minute");
+    // //     } catch (error) {
+    // //         console.error("Error updating EmailVerifyCode:", error);
+    // //     }
+    // // }, 1000); // 3 minute in milliseconds
+
+    // return sendResponse(res, {
+    //     statusCode: httpStatus.OK,
+    //     success: true,
+    //     message: "Send email Verify Code Successfully",
+    // });
 });
 
 exports.resetPassword = catchAsync(async (req, res, next) => {
@@ -373,6 +442,47 @@ exports.deleteAdmin=catchAsync(async (req, res) => {
         }else{
             throw new ApiError(404, "User not found"); 
         }
+    }else{
+        throw new ApiError(401, "You are unauthorized");
+    }
+
+});
+
+
+
+exports.profileUpdate=catchAsync(async (req, res) => {
+
+    const{fullName,image,mobileNumber,gender,location}=req.body
+  
+
+    const user = await User.findById(req.user._id);
+
+    if(user.role=="ADMIN" || "SUPER ADMIN"){
+
+        const updateData = { fullName, mobileNumber, gender, location };
+
+        if (req.files && req.files['image']) {
+            let imageFileName = '';
+            if (req.files.image[0]) {
+                // Add public/uploads link to the image file
+
+
+                imageFileName = `public/uploads/images/${req.files.image[0].filename}`;
+                updateData.image=imageFileName
+            }
+
+
+        }
+          
+        let userData=await User.findByIdAndUpdate(req.user._id, updateData, { new: true });
+
+        return sendResponse(res, {
+            statusCode: httpStatus.OK,
+            success: true,
+            message: "Profile update successfully",
+            data:userData
+        });
+
     }else{
         throw new ApiError(401, "You are unauthorized");
     }

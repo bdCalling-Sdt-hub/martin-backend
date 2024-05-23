@@ -28,7 +28,7 @@ const userSchema = new mongoose.Schema(
             required: false,
             trim: true,
         },
-        gander:{
+        gender:{
              type:String,
              required:false,
              trim:true
